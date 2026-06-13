@@ -1,28 +1,40 @@
 #import "Headers.h"
 
-static BOOL didRun = NO;
+static BOOL didShow = NO;
 
 %hook YTInnerTubeCollectionViewController
 
 - (void)addSectionsFromArray:(NSArray *)array {
 
-    if (!didRun && array.count > 0) {
+    if (!didShow && array.count > 0) {
 
-        didRun = YES;
+        didShow = YES;
 
-        id firstSection = [array firstObject];
+        NSString *desc = [[array firstObject] description];
 
-        NSString *text = [firstSection description];
+        if (desc.length > 800) {
+            desc = [desc substringToIndex:800];
+        }
 
-        if (!text)
-            text = @"NULL";
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
 
-        NSString *path = @"/var/mobile/Documents/filter_debug.txt";
+            UIWindow *window = [[[UIApplication sharedApplication] windows] firstObject];
 
-        [text writeToFile:path
-              atomically:YES
-                encoding:NSUTF8StringEncoding
-                   error:nil];
+            UIViewController *vc = window.rootViewController;
+
+            UIAlertController *alert =
+            [UIAlertController alertControllerWithTitle:@"FILTER DEBUG"
+                                                message:desc
+                                         preferredStyle:UIAlertControllerStyleAlert];
+
+            [alert addAction:
+                [UIAlertAction actionWithTitle:@"OK"
+                                         style:UIAlertActionStyleDefault
+                                       handler:nil]
+            ];
+
+            [vc presentViewController:alert animated:YES completion:nil];
+        });
     }
 
     %orig;
