@@ -1,3 +1,4 @@
+#import <objc/runtime.h>
 #import "Headers.h"
 
 static BOOL didShow = NO;
@@ -14,6 +15,7 @@ static BOOL didShow = NO;
     didShow = YES;
 
     id foundRenderer = nil;
+    int rendererIndex = 0;
 
     for (id section in array) {
 
@@ -27,10 +29,15 @@ static BOOL didShow = NO;
             if (![item respondsToSelector:@selector(elementRenderer)])
                 continue;
 
-            foundRenderer = [item valueForKey:@"elementRenderer"];
+            rendererIndex++;
 
-            if (foundRenderer)
+            // Cambia questo numero se serve
+            if (rendererIndex == 15) {
+
+                foundRenderer = [item valueForKey:@"elementRenderer"];
+
                 break;
+            }
         }
 
         if (foundRenderer)
@@ -41,22 +48,31 @@ static BOOL didShow = NO;
 
     if (foundRenderer) {
 
-        @try {
+        NSMutableString *msg = [NSMutableString string];
 
-            id titleObj = [foundRenderer valueForKey:@"title"];
+        [msg appendFormat:@"RENDERER #%d\n\n", rendererIndex];
 
-            message = [NSString stringWithFormat:
-                @"TITLE CLASS:\n%@\n\nTITLE VALUE:\n%@",
-                NSStringFromClass([titleObj class]),
-                titleObj];
+        [msg appendFormat:@"CLASS:\n%@\n\n",
+         NSStringFromClass([foundRenderer class])];
 
+        unsigned int count = 0;
+
+        objc_property_t *properties =
+        class_copyPropertyList([foundRenderer class], &count);
+
+        [msg appendFormat:@"PROPERTIES (%u):\n\n", count];
+
+        for (unsigned int i = 0; i < count; i++) {
+
+            const char *name =
+            property_getName(properties[i]);
+
+            [msg appendFormat:@"%s\n", name];
         }
-        @catch (NSException *exception) {
 
-            message = [NSString stringWithFormat:
-                @"EXCEPTION\n\n%@",
-                exception.reason];
-        }
+        free(properties);
+
+        message = msg;
     }
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC),
@@ -69,7 +85,7 @@ static BOOL didShow = NO;
         window.rootViewController;
 
         UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:@"TITLE DEBUG"
+        [UIAlertController alertControllerWithTitle:@"RENDERER DEBUG"
                                             message:message
                                      preferredStyle:UIAlertControllerStyleAlert];
 
