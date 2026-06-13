@@ -15,47 +15,18 @@ static BOOL didShow = NO;
 
     NSMutableString *msg = [NSMutableString string];
 
-    int sectionCount = 0;
+    int idx = 0;
 
     for (id section in array) {
 
-        sectionCount++;
-
         [msg appendFormat:
-         @"SECTION %d\n%@\n\n",
-         sectionCount,
+         @"%d -> %@\n",
+         idx,
          NSStringFromClass([section class])];
 
-        @try {
+        idx++;
 
-            NSArray *contents =
-            [section valueForKey:@"contentsArray"];
-
-            [msg appendFormat:
-             @"contents=%lu\n\n",
-             (unsigned long)contents.count];
-
-            int i = 0;
-
-            for (id item in contents) {
-
-                [msg appendFormat:
-                 @"item %d -> %@\n",
-                 i,
-                 NSStringFromClass([item class])];
-
-                i++;
-
-                if (i >= 5)
-                    break;
-            }
-
-        } @catch (...) {
-
-            [msg appendString:@"NO CONTENTS\n\n"];
-        }
-
-        if (sectionCount >= 5)
+        if (idx >= 30)
             break;
     }
 
@@ -69,7 +40,7 @@ static BOOL didShow = NO;
         window.rootViewController;
 
         UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:@"SECTION DEBUG"
+        [UIAlertController alertControllerWithTitle:@"SECTION TYPES"
                                             message:msg
                                      preferredStyle:UIAlertControllerStyleAlert];
 
