@@ -1,4 +1,3 @@
-#import <objc/runtime.h>
 #import "Headers.h"
 
 static BOOL didShow = NO;
@@ -14,65 +13,50 @@ static BOOL didShow = NO;
 
     didShow = YES;
 
-    id foundRenderer = nil;
-    int rendererIndex = 0;
+    NSMutableString *msg = [NSMutableString string];
+
+    int sectionCount = 0;
 
     for (id section in array) {
 
-        if (![section respondsToSelector:@selector(contentsArray)])
-            continue;
+        sectionCount++;
 
-        NSArray *contents = [section valueForKey:@"contentsArray"];
+        [msg appendFormat:
+         @"SECTION %d\n%@\n\n",
+         sectionCount,
+         NSStringFromClass([section class])];
 
-        for (id item in contents) {
+        @try {
 
-            if (![item respondsToSelector:@selector(elementRenderer)])
-                continue;
+            NSArray *contents =
+            [section valueForKey:@"contentsArray"];
 
-            rendererIndex++;
+            [msg appendFormat:
+             @"contents=%lu\n\n",
+             (unsigned long)contents.count];
 
-            // Cambia questo numero se serve
-            if (rendererIndex == 15) {
+            int i = 0;
 
-                foundRenderer = [item valueForKey:@"elementRenderer"];
+            for (id item in contents) {
 
-                break;
+                [msg appendFormat:
+                 @"item %d -> %@\n",
+                 i,
+                 NSStringFromClass([item class])];
+
+                i++;
+
+                if (i >= 5)
+                    break;
             }
+
+        } @catch (...) {
+
+            [msg appendString:@"NO CONTENTS\n\n"];
         }
 
-        if (foundRenderer)
+        if (sectionCount >= 5)
             break;
-    }
-
-    NSString *message = @"No renderer found";
-
-    if (foundRenderer) {
-
-        NSMutableString *msg = [NSMutableString string];
-
-        [msg appendFormat:@"RENDERER #%d\n\n", rendererIndex];
-
-        [msg appendFormat:@"CLASS:\n%@\n\n",
-         NSStringFromClass([foundRenderer class])];
-
-        unsigned int count = 0;
-
-        objc_property_t *properties =
-        class_copyPropertyList([foundRenderer class], &count);
-
-        [msg appendFormat:@"PROPERTIES (%u):\n\n", count];
-
-        for (unsigned int i = 0; i < count; i++) {
-
-            const char *name =
-            property_getName(properties[i]);
-
-            [msg appendFormat:@"%s\n", name];
-        }
-
-        free(properties);
-
-        message = msg;
     }
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC),
@@ -85,8 +69,8 @@ static BOOL didShow = NO;
         window.rootViewController;
 
         UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:@"RENDERER DEBUG"
-                                            message:message
+        [UIAlertController alertControllerWithTitle:@"SECTION DEBUG"
+                                            message:msg
                                      preferredStyle:UIAlertControllerStyleAlert];
 
         [alert addAction:
