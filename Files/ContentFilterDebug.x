@@ -8,39 +8,52 @@ static BOOL didShow = NO;
 
     if (!didShow) {
 
-        didShow = YES;
-
         NSMutableString *result = [NSMutableString string];
 
-        NSInteger limit = MIN((NSInteger)array.count, 20);
+        for (id section in array) {
 
-        for (NSInteger i = 0; i < limit; i++) {
+            if (![section respondsToSelector:@selector(contentsArray)])
+                continue;
 
-            id obj = array[i];
+            NSArray *contents = [section valueForKey:@"contentsArray"];
 
             [result appendFormat:
-                @"ITEM %ld\n%@\n\n",
-                (long)i,
-                NSStringFromClass([obj class])];
+                @"Section contents: %lu\n",
+                (unsigned long)contents.count];
+
+            for (NSUInteger i = 0; i < MIN(contents.count, 5); i++) {
+
+                id item = contents[i];
+
+                [result appendFormat:
+                    @"  -> %@\n",
+                    NSStringFromClass([item class])];
+            }
+
+            if (result.length > 500)
+                break;
         }
 
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        didShow = YES;
+
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC),
+                       dispatch_get_main_queue(), ^{
 
             UIWindow *window = [[[UIApplication sharedApplication] windows] firstObject];
             UIViewController *vc = window.rootViewController;
 
             UIAlertController *alert =
-            [UIAlertController alertControllerWithTitle:@"CLASS DEBUG"
+            [UIAlertController alertControllerWithTitle:@"CONTENTS DEBUG"
                                                 message:result
                                          preferredStyle:UIAlertControllerStyleAlert];
 
-            [alert addAction:
-                [UIAlertAction actionWithTitle:@"OK"
-                                         style:UIAlertActionStyleDefault
-                                       handler:nil]
-            ];
+            [alert addAction:[UIAlertAction actionWithTitle:@"OK"
+                                                      style:UIAlertActionStyleDefault
+                                                    handler:nil]];
 
-            [vc presentViewController:alert animated:YES completion:nil];
+            [vc presentViewController:alert
+                             animated:YES
+                           completion:nil];
         });
     }
 
