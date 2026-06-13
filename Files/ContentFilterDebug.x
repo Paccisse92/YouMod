@@ -17,24 +17,33 @@ static BOOL didShow = NO;
 
             NSArray *contents = [section valueForKey:@"contentsArray"];
 
-            [result appendFormat:
-                @"Section contents: %lu\n",
-                (unsigned long)contents.count];
+            for (id item in contents) {
 
-            for (NSUInteger i = 0; i < MIN(contents.count, 5); i++) {
+                if (![item respondsToSelector:@selector(elementRenderer)])
+                    continue;
 
-                id item = contents[i];
+                id renderer = [item valueForKey:@"elementRenderer"];
 
                 [result appendFormat:
-                    @"  -> %@\n",
-                    NSStringFromClass([item class])];
+                    @"CLASS:\n%@\n\n",
+                    NSStringFromClass([renderer class])];
+
+                NSString *desc = [renderer description];
+
+                if (desc.length > 400)
+                    desc = [desc substringToIndex:400];
+
+                [result appendFormat:
+                    @"%@\n\n=================\n\n",
+                    desc];
+
+                didShow = YES;
+                break;
             }
 
-            if (result.length > 500)
+            if (didShow)
                 break;
         }
-
-        didShow = YES;
 
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC),
                        dispatch_get_main_queue(), ^{
@@ -43,7 +52,7 @@ static BOOL didShow = NO;
             UIViewController *vc = window.rootViewController;
 
             UIAlertController *alert =
-            [UIAlertController alertControllerWithTitle:@"CONTENTS DEBUG"
+            [UIAlertController alertControllerWithTitle:@"ELEMENT DEBUG"
                                                 message:result
                                          preferredStyle:UIAlertControllerStyleAlert];
 
