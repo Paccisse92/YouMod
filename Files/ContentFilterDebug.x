@@ -8,7 +8,11 @@ static BOOL didShow = NO;
 
     if (!didShow) {
 
+        didShow = YES;
+
         NSMutableString *result = [NSMutableString string];
+
+        int count = 0;
 
         for (id section in array) {
 
@@ -24,24 +28,24 @@ static BOOL didShow = NO;
 
                 id renderer = [item valueForKey:@"elementRenderer"];
 
-                [result appendFormat:
-                    @"CLASS:\n%@\n\n",
-                    NSStringFromClass([renderer class])];
-
                 NSString *desc = [renderer description];
 
-                if (desc.length > 400)
-                    desc = [desc substringToIndex:400];
+                if (desc.length > 120) {
+                    desc = [desc substringToIndex:120];
+                }
 
                 [result appendFormat:
-                    @"%@\n\n=================\n\n",
-                    desc];
+                 @"[%d]\n%@\n\n",
+                 count,
+                 desc];
 
-                didShow = YES;
-                break;
+                count++;
+
+                if (count >= 20)
+                    break;
             }
 
-            if (didShow)
+            if (count >= 20)
                 break;
         }
 
@@ -52,7 +56,7 @@ static BOOL didShow = NO;
             UIViewController *vc = window.rootViewController;
 
             UIAlertController *alert =
-            [UIAlertController alertControllerWithTitle:@"ELEMENT DEBUG"
+            [UIAlertController alertControllerWithTitle:@"20 RENDERERS"
                                                 message:result
                                          preferredStyle:UIAlertControllerStyleAlert];
 
