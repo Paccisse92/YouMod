@@ -1,4 +1,3 @@
-#import <objc/runtime.h>
 #import "Headers.h"
 
 static BOOL didShow = NO;
@@ -14,24 +13,51 @@ static BOOL didShow = NO;
 
     didShow = YES;
 
-    NSMutableString *result = [NSMutableString string];
+    id foundRenderer = nil;
 
-    unsigned int count = 0;
+    for (id section in array) {
 
-    objc_property_t *properties =
-    class_copyPropertyList(%c(YTIElementRenderer), &count);
+        if (![section respondsToSelector:@selector(contentsArray)])
+            continue;
 
-    [result appendFormat:@"Properties: %u\n\n", count];
+        NSArray *contents = [section valueForKey:@"contentsArray"];
 
-    for (unsigned int i = 0; i < count; i++) {
+        for (id item in contents) {
 
-        const char *name =
-        property_getName(properties[i]);
+            if (![item respondsToSelector:@selector(elementRenderer)])
+                continue;
 
-        [result appendFormat:@"%s\n", name];
+            foundRenderer = [item valueForKey:@"elementRenderer"];
+
+            if (foundRenderer)
+                break;
+        }
+
+        if (foundRenderer)
+            break;
     }
 
-    free(properties);
+    NSString *message = @"No renderer found";
+
+    if (foundRenderer) {
+
+        @try {
+
+            id titleObj = [foundRenderer valueForKey:@"title"];
+
+            message = [NSString stringWithFormat:
+                @"TITLE CLASS:\n%@\n\nTITLE VALUE:\n%@",
+                NSStringFromClass([titleObj class]),
+                titleObj];
+
+        }
+        @catch (NSException *exception) {
+
+            message = [NSString stringWithFormat:
+                @"EXCEPTION\n\n%@",
+                exception.reason];
+        }
+    }
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC),
                    dispatch_get_main_queue(), ^{
@@ -43,8 +69,8 @@ static BOOL didShow = NO;
         window.rootViewController;
 
         UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:@"ELEMENT PROPERTIES"
-                                            message:result
+        [UIAlertController alertControllerWithTitle:@"TITLE DEBUG"
+                                            message:message
                                      preferredStyle:UIAlertControllerStyleAlert];
 
         [alert addAction:
